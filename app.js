@@ -5,8 +5,12 @@ var budgetController = (function(){
        this.id = id;
        this.description = description;
        this.value = value;
+       
    };
-                         
+    
+                        
+                    
+    
     var Income = function(id, description, value){
        this.id = id;
        this.description = description;
@@ -37,6 +41,8 @@ var budgetController = (function(){
         }, 
         
         budget: 0
+        
+        
     };
     
     return {
@@ -66,7 +72,26 @@ var budgetController = (function(){
             data.allItems[type].push(newItem);
             
             return newItem;
-        },     
+        },
+        
+        
+        deleteItem: function(type, id){
+            var ids, index;
+            
+            ids=data.allItems[type].map(function(current){
+                return current.id;
+            });
+            
+            index = ids.indexOf(id);
+            
+            if(index!==-1){
+                data.allItems[type].splice(index, 1);
+            }
+            
+            
+        },
+        
+        
         calculateBudget: function(){
           
             // calculate total income and expenses
@@ -76,22 +101,26 @@ var budgetController = (function(){
             //calculate the budget: income - expenses
             data.budget = data.totals.inc - data.totals.exp;
             
+    
+           
             
-        },   
+        },
+        
+        
         getBudget: function(){
             return{
                 budget: data.budget,
                 totalInc: data.totals.inc,
                 totalExp: data.totals.exp,
+                // percentage: data.percentage
             }
-        },
-    
-        test: function(){
-            console.log(data);
         }
     };
     
 })();
+
+
+
 
 //UI CONTROLLER
 var UIController = (function(){
@@ -163,6 +192,8 @@ var UIController = (function(){
             };
             
         }, 
+        
+        
         
             changedType: function(){
                 var fields = document.querySelectorAll(
@@ -251,7 +282,8 @@ var UIController = (function(){
                 current.value = "";
             });
             
-            fieldsArr[0].focus();      
+            fieldsArr[0].focus();
+            
         },
         
         displayBudget: function(obj){
@@ -260,10 +292,15 @@ var UIController = (function(){
             document.querySelector(DOMstrings.budgetLabel).textContent = formatNumber(obj.budget, type);
              document.querySelector(DOMstrings.incomeLabel).textContent = formatNumber(obj.totalInc,'inc');
              document.querySelector(DOMstrings.expensesLabel).textContent =formatNumber(obj.totalExp, 'exp');
+           
         }
         
-    };   
+    };
+    
 })();
+
+
+
 //GLOBAL APP CONTROLLER
 var controller = (function(budgetCtrl, UICtrl){
     
@@ -278,10 +315,13 @@ var controller = (function(budgetCtrl, UICtrl){
         
           });
         
+        document.querySelector(DOM.container).addEventListener('click', ctrlDeleteItem);
+        
         document.querySelector(DOM.inputType).addEventListener('change', UICtrl.changedType);
         
         
-    }; 
+    };
+    
     var updateBudget = function(){
         // 1. calculate the budget
         budgetCtrl.calculateBudget();
@@ -292,6 +332,7 @@ var controller = (function(budgetCtrl, UICtrl){
         // 3. display budget on uI
         UICtrl.displayBudget(budget);
     };
+  
     
     var ctrlAddItem = function(){
         var input, newItem;
@@ -310,8 +351,38 @@ var controller = (function(budgetCtrl, UICtrl){
 
             //. 5 calculate and update budget
             updateBudget();
+          
         }
     };
+    
+    var ctrlDeleteItem = function(event){
+        var itemID, splitID, type, id; 
+        
+        itemID= event.target.parentNode.parentNode.parentNode.parentNode.id;
+        
+                 if(itemID){
+                    splitID=itemID.split('-');
+                     type=splitID[0];
+                     id=parseInt(splitID[1]);
+                     
+            //1. delete item from data structure
+                     budgetCtrl.deleteItem(type, id);
+                     
+                     
+                     //2.delete item from ui
+                     UICtrl.deleteListItem(itemID);
+                     
+                     //3. update and show the budget
+                     updateBudget();
+                     
+                    
+                     
+                    
+        }
+        
+    };
+
+    
     return{
         init: function(){
             setUpEventListeners();
@@ -324,6 +395,8 @@ var controller = (function(budgetCtrl, UICtrl){
             });
         }
     }
+  
+
 })(budgetController, UIController);
 
 controller.init();
